@@ -18340,15 +18340,30 @@ Module.prototype.require = function myRequire(){
 var cloud = __nccwpck_require__(2752)
 cloud.shared.set("START_UP_TIME",new Date().getTime());
 
-var token = "xxx"
-var owner = "edwagbb"
-var repo = "Tiny-Cloud-Functions"
-var server = "https://ghproxy.com/https://github.com"
-var path = "/functions"
+var content = ""
+try{
+content = fs.readFileSync('.env', 'utf8')
+}catch(e){}
+
+content.split('\n').forEach(e=>{
+	e = e.trim()
+	if(!e || e[0] === "#") return;
+	var t = e.match(/^([^=]*?)=([\s\S]*)$/)
+	if(t&&t.length===3){
+		process.env[t[1].trim()] = t[2].trim()
+	}
+})
+
+var git = (process.env.GITHUB||"").match(/^([^\/]*?)\/([^\/]*?)\/([^\/]*?)(\/[\s\S]*?)$/)
+if(!git || git.length != 5) {
+	console.log('need process.env.GITHUB = token/owner/repo/js-path !')
+	return 
+}
+var [token,owner,repo,path] = [git[1],git[2],git[3],git[4]]
 var path_reg = new RegExp(`[^/]+?/${path.replace(/^\//,"").replace(/\/$/,"")}/([\\s\\S]+?)$`)
 
 //`https://raw.githubusercontent.com/${owner}/${repo}/master${path}`
-	var data = (await cloud.fetch(`${server}/${owner}/${repo}/archive/refs/heads/main.zip`,{
+	var data = (await cloud.fetch((process.env.GHPROXY?process.env.GHPROXY.replace(/\/$/,"")+"/":"")+`https://github.com/${owner}/${repo}/archive/refs/heads/main.zip`,{
     method:'GET',
   headers:{ "Authorization":`Bearer ${token}`},
   responseType: 'arraybuffer'
