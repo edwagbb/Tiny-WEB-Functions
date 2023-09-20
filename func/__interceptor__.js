@@ -7,7 +7,7 @@ exports.default = async function (ctx) {
 		if(funcName === "/") funcName = "/index";
 		return await require('@'+funcName).default(ctx)
 	}catch(e){
-		return e.message
+		//return e.message
 		if(ctx.request.url.indexOf("/favicon.ico") === 0) return ""
 		ctx.response.header("content-type",'image/jpeg')
 		if(!cloud.shared.has('404_jpg')){
