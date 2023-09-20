@@ -65,7 +65,11 @@ return funcs
 			if(!/^([a-zA-Z0-9_.]{1,256})$/.test(funcName)) return false;
 			funcName = (funcName[0]==="/"?"":"/")+funcName
       var code = await git.cat( funcName)
-      if(!code) code = defaultCode.toString().replace(/}[^}]*?$/,'').replace(/^[^{]*?{/,'');
+      if(!code.trim()) code = `const cloud = require('@sys/cloud');
+
+exports.default = async function (ctx) {
+    
+}`//defaultCode.toString().replace(/}[^}]*?$/,'').replace(/^[^{]*?{/,'');
       return code;
 			return await new Promise((resolve, reject) => {
     fs.readFile(jsPath+funcName, 'utf8', (error, data) => {
@@ -14381,22 +14385,6 @@ module.exports = eval("require")("@/__init__");
 
 /***/ }),
 
-/***/ 6269:
-/***/ ((module) => {
-
-module.exports = eval("require")("@/__interceptor__");
-
-
-/***/ }),
-
-/***/ 7625:
-/***/ ((module) => {
-
-module.exports = eval("require")("@/index");
-
-
-/***/ }),
-
 /***/ 2752:
 /***/ ((module) => {
 
@@ -18895,7 +18883,7 @@ process.on('uncaughtException', function (err) {
   console.error('An uncaught error occurred!');
   console.error(err.stack);
 });
-Module.prototype.require = function myRequire(){
+function myRequire(){
 	if(arguments[0].indexOf('@/') === 0){
 		var funcName = arguments[0];
 		//arguments[0] = __JS_FUNC_PATH + arguments[0].substring(2) + '.js'
@@ -18912,7 +18900,8 @@ Module.prototype.require = function myRequire(){
 		return sys_cloud;
 	}
 	return originalRequire.apply(this, arguments);
-};
+}
+Module.prototype.require = myRequire;
 var cloud = __nccwpck_require__(2752)
 cloud.shared.set("START_UP_TIME",new Date().getTime());
 
@@ -19033,7 +19022,7 @@ try{
 	if(ctx.request.url.indexOf(process.env.ADMIN_PATH || "/admin")===0){
 		var __interceptor__ = __nccwpck_require__(3489)
 	}else{
-		var __interceptor__ = __nccwpck_require__(6269)
+		var __interceptor__ = myRequire('@/__interceptor__')
 	}
 }catch(e){
 	//console.log(e.message)
@@ -19041,12 +19030,13 @@ try{
 try{
 	var urlObject = url.parse('http://' + ctx.request.headers['host'] + ctx.request.url);
 	var rst = "";
-	if(__interceptor__){
+	if(__interceptor__ && __interceptor__.default){
 		rst = await __interceptor__.default(ctx);
 	}else{
 		var funcName = urlObject.pathname.match(/^\/([a-zA-Z0-9_.]{0,256})(\/|$)/)[1];
+		console.log(ctx.request.url, funcName)
 		if(funcName === "") funcName = "index";
-		rst = await (__nccwpck_require__(7625)["default"])(ctx);
+		rst = await myRequire('@/'+funcName).default(ctx);
 	}
 	if(typeof rst === "object"){
 		if(Buffer.isBuffer(rst)){
