@@ -1,6 +1,582 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 3489:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+const fs = __nccwpck_require__(7147);
+const cloud = __nccwpck_require__(2752)
+var authToken = (process.env.Auth||"").split(':')
+const git = (__nccwpck_require__(713).git)(process.env.GITHUB)
+var jsPath = require.main.filename.replace(/[\/|\\][^\/\\]*?$/,'')+  '/functions';
+var __JS_CODE = cloud.shared.get("__JS_CODE")
+
+exports["default"]=async function (ctx) {
+	if(!authToken.length) return 1
+ctx.response.setHeader('Access-Control-Allow-Origin',  '*');
+  ctx.response.setHeader("Access-Control-Allow-Headers", '*');
+  ctx.response.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+   const auth = ctx.request.headers['authorization'];
+  if (!auth) {
+    ctx.response.writeHead(401, {'WWW-Authenticate': 'Basic realm="Secure Area"'});
+    ctx.response.end('Authorization is needed');
+	return ""
+  } else {
+    const tmp = auth.split(' '); 
+
+    const buf = Buffer.from(tmp[1], 'base64'); 
+    const plain_auth = buf.toString();  
+	
+    const creds = plain_auth.split(':');  
+    const username = creds[0];
+    const password = creds[1];
+
+    if (username == authToken[0] && password == authToken[1]) {
+      //ctx.response.writeHead(200, {'Content-Type': 'text/plain'});
+      //res.end('Authentication successful');
+    } else {
+      ctx.response.writeHead(401, {'WWW-Authenticate': 'Basic realm="Secure Area"'});
+      ctx.response.end('Authentication failed');
+	  return "";
+    }
+  }
+  
+	switch(ctx.request.query['action']){
+		case 'getFuncList':
+    return await git.dir("/");
+		var files = await new Promise((resolve, reject) => {
+    fs.readdir(jsPath, (error, files) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(files);
+      }
+    });
+  });
+  var funcs = []
+  for(let i=0;i<files.length;i++){
+	  if(/\.js(on)?$/i.test(files[i])) funcs.push(files[i])
+  }
+return funcs
+			break;
+		case 'getFuncCode':
+			var funcName = ctx.request.query['func'];
+			if(!/^([a-zA-Z0-9_.]{1,256})$/.test(funcName)) return false;
+			funcName = (funcName[0]==="/"?"":"/")+funcName
+      var code = await git.cat( funcName)
+      if(!code) code = defaultCode.toString().replace(/}[^}]*?$/,'').replace(/^[^{]*?{/,'');
+      return code;
+			return await new Promise((resolve, reject) => {
+    fs.readFile(jsPath+funcName, 'utf8', (error, data) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+			break;
+		case 'changeFuncCode':
+		var funcName = ctx.request.query['func'];
+			if(!/^([a-zA-Z0-9_.]{1,256})$/.test(funcName)) return false;
+			funcName = (funcName[0]==="/"?"":"/")+funcName
+			var type = ctx.request.query['type'];
+			
+			
+			if(type === "add"){
+				if(!/\.js$/i.test(funcName)) funcName = funcName + '.js'
+			var code=defaultCode.toString().replace(/}[^}]*?$/,'').replace(/^[^{]*?{/,'');
+				//await writeFilePromise(jsPath+funcName,code);
+				return code;
+			}else if(type === "change"){
+        	if(!/\.js(on)?$/i.test(funcName)) funcName = funcName + '.js'
+				var code =  ctx.buffer
+				//await writeFilePromise(jsPath+funcName,code);
+        if(__JS_CODE) __JS_CODE[funcName.replace(/^\//,"")] = code
+        await git.echo(code,">", funcName)
+   //await git.echo("123",">","1.txt")
+   //await git.echo("456",">>","1.txt")
+  //var txt =  await git.cat("1.txt")
+  //await git.del("1.txt")
+  //return txt
+	//await 
+	return code;
+	}
+			break;
+		case 'delFunc':
+		var funcName = ctx.request.query['func'];
+		if(!/^([a-zA-Z0-9_.]{1,256})$/.test(funcName)) return false;
+      if(!/\.js$/i.test(funcName)) funcName = funcName + '.js'
+			funcName = (funcName[0]==="/"?"":"/")+funcName
+			//await unlinkPromise(jsPath+funcName);
+			await git.del( funcName)
+			break;
+		default:
+			ctx.response.setHeader('content-type','text/html; charset=utf-8')
+			return gethtml.toString().replace(/^[\s\S]*?\/\*/,'').replace(/\*\/[\s\S]*?$/,'');
+	}
+}
+
+function defaultCode(){const cloud = __nccwpck_require__(2752);
+
+exports["default"] = async function (ctx) {
+    
+}
+}
+
+function writeFilePromise(path, data) {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(path, data, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+function unlinkPromise(path) {
+  return new Promise((resolve, reject) => {
+    fs.unlink(path, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+function gethtml(){
+/*
+<html>
+<head>
+<meta name="referrer" content="no-referrer">
+    <style>
+	html,body{
+margin:0px;
+overflow:hidden;
+	}
+#main{
+	width: 100%;
+            height: 100%;
+			
+	}
+	.unselectable {
+                -webkit-user-select: none;     
+                -moz-user-select: none;  
+                -ms-user-select: none;    
+                -o-user-select: none;
+                user-select: none;
+            }
+    </style>
+	<link rel="stylesheet" href="https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-M/layui/2.6.8/css/layui.min.css">
+	<script src="https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-M/layui/2.6.8/layui.min.js"></script>
+	<script src="https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-M/alpinejs/2.7.3/alpine.js" defer></script>
+</head>
+
+<body>
+<script>
+document.addEventListener("keydown", function(e) {
+  if (e.ctrlKey && e.key === "s") {
+    e.preventDefault();  // 阻止浏览器默认保存网页的行为
+    //alert("你按下了 CTRL + S");
+    top.document.querySelector(".layui-menu-item-checked button").click()
+    // 在这里添加你需要触发的事件或功能
+  }
+});
+
+for(let i in localStorage){
+if(/^__code_/.test(i)) localStorage.removeItem(i)
+}
+</script>
+<div id="main" class="layui-container layui-row" style="padding:0px;">
+<div id="left" class="layui-col-md2 unselectable" style="height:100%;overflow: scroll;" x-data="{ items: [] }" x-init="async () => {items = await (await fetch('?action=getFuncList')).json();window.items=items;}">
+  <div class="layui-panel">
+    <ul class="layui-menu layui-menu-lg">
+      <li class="layui-menu-item-group" lay-options="{type: 'group', isAllowSpread: false}">
+        <div class="layui-menu-body-title" >
+          函数列表 <button type="button" class="layui-btn layui-btn-sm" style="float:right;" x-on:click="layer.prompt({title: '增加函数', formType: 0}, async function(funcName, index){
+        layer.close(index);
+		if(/^([a-zA-Z0-9_.]{1,256})$/.test(funcName)){
+		items.push(funcName+'.js');
+		var code = await (await fetch('?action=changeFuncCode&type=add&func='+funcName)).text()
+		localStorage['__code_'+funcName] = code
+		document.querySelector('')
+		}
+      });">
+    <i class="layui-icon layui-icon-add-1"></i>
+  </button>
+        </div>
+        <hr>
+        <ul>
+<template x-for="(item, index) in items" :key="index">
+          <li class="" onclick="(async (funcName)=>{
+		  var code = localStorage['__code_'+funcName];
+		  if(!code){
+		  code = await (await fetch('?action=getFuncCode&func='+funcName)).text();
+		  localStorage['__code_'+funcName] = code
+		  }
+
+		  var editor = document.querySelector('iframe').contentWindow.editor
+		  var newModel = document.querySelector('iframe').contentWindow.monaco.editor.createModel(code,'javascript')
+		  editor.setModel(newModel);
+		  editor.getValue()
+		  if(window.editlistenevent) window.editlistenevent.dispose();
+		 window.editlistenevent =  editor.onDidChangeModelContent(function () {
+    localStorage['__code_'+funcName] = editor.getValue()
+	document.querySelectorAll('span.funcname').forEach(e=>{
+	if(e.innerText === funcName){
+		e.parentNode.querySelector('.layui-badge-dot').style.display='inline-block';
+	}
+	})
+	
+});
+
+		  })(this.querySelector('.funcName').innerText)">
+            <div class="layui-menu-body-title">
+              <a href="javascript:void(0)" >
+                <span x-text="item" :x-ref="'func'+index" class="funcName"></span>
+                <span class="layui-font-12 layui-font-gray"></span>
+                <span class="layui-badge-dot" style="display:none;"></span>
+				<button type="button" class="layui-btn layui-btn-sm " style="float:right;" onclick="
+var funcName = this.parentNode.querySelector('.funcName').innerText;
+var dot = this.parentNode.querySelector('.layui-badge-dot')
+console.log(dot)
+//layer.confirm('确定保存函数 '+funcName+' ？', {
+      //  btn: ['确定', '取消']
+   //   }, function(){
+	  var code = localStorage['__code_'+funcName];
+		fetch('?action=changeFuncCode&type=change&func='+funcName,{method:'POST',body:code})
+		dot.style.display='none';
+		document.querySelector('.layui-layer-setwin a').click()
+    //  }, function(){
+    //  });
+				">
+			 <i class="layui-icon layui-icon-upload"></i>
+  </button>
+                <button type="button" class="layui-btn layui-btn-sm " style="float:right;" onclick="
+				console.log(this)
+var funcName = this.parentNode.querySelector('.funcName').innerText;
+layer.confirm('确定删除函数 '+funcName+' ？', {
+        btn: ['确定', '取消']
+      }, function(){
+		fetch('?action=delFunc&func='+funcName)
+		for(let i in window.items){
+			if(window.items[i]===funcName) window.items.splice(i,1)
+		}
+		document.querySelector('.layui-layer-setwin a').click()
+      }, function(){
+      });
+				">
+    <i class="layui-icon layui-icon-delete"></i>
+  </button>
+              </a>
+            </div>
+          </li>
+</template>  
+        </ul>
+      </li>
+    </ul>
+  </div>
+</div>
+    <div class="layui-col-md10" style="height:100%;">
+	<iframe style="width:100%;height:100vh;border:0px;" srcdoc='
+	<html>
+	<body>
+	<style>
+		html,body{
+margin:0px;
+overflow:hidden;
+width:100%;
+height:100vh;
+	}
+	</style>
+	<div id="editor" style="width:100%;height:100vh;"></div>
+    <script>
+        var require = {
+            paths: {
+                "vs": "https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-M/monaco-editor/0.33.0-dev.20220228/min/vs/"
+            }
+        };
+    </script>
+    <script src="https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-M/monaco-editor/0.33.0-dev.20220228/min/vs/loader.js"></script>
+    <script src="https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-M/monaco-editor/0.33.0-dev.20220228/min/vs/editor/editor.main.nls.js"></script>
+    <script src="https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-M/monaco-editor/0.33.0-dev.20220228/min/vs/editor/editor.main.js"></script>
+    <script>
+    
+document.addEventListener("keydown", function(e) {
+  if (e.ctrlKey && e.key === "s") {
+    e.preventDefault();  // 阻止浏览器默认保存网页的行为
+    //alert("你按下了 CTRL + S");
+    top.document.querySelector(".layui-menu-item-checked button").click()
+    // 在这里添加你需要触发的事件或功能
+  }
+});
+
+
+    
+        require(["vs/editor/editor.main"], function () {
+            // "javascript"
+            window.editor = monaco.editor.create(document.getElementById("editor"), {
+                model: null,
+                minimap: {
+                    enabled: false
+                }
+            });
+			var newModel = monaco.editor.createModel(
+                    `Tiny Cloud Functions & Simple Code Editor\r\nMade with ❤ by edwa!\r\nCoding like writing a blog.`,
+                    "javascript"
+            );
+            editor.setModel(newModel);
+        })
+    </script>
+	</body>
+	</html>
+	'></iframe>
+	</div>
+</div>
+</body>
+
+</html>
+*/}
+
+
+/***/ }),
+
+/***/ 713:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+const cloud = __nccwpck_require__(2752);
+
+exports["default"] = async function (ctx) {
+  try{
+    var settings = ctx.request.url.match(/^\/([^\/]*?)\/([^\/]*?)\/([^\/]*?)\/([^\/]*?)(\/[^\?]*)(\?|$)/);
+    var token = settings[2];//'ghp_xxxxx'  //https://github.com/settings/tokens
+    var owner = settings[3];//'user'
+    var repo = settings[4];//'repo'
+    var path = settings[5]; //file_path
+    if(/\.json$/i.test(path)) ctx.response.header("content-type", "application/json; charset=utf-8");
+    if(/\.js$/i.test(path)) ctx.response.header("content-type", "text/javascript; charset=utf-8");
+    if(/\.html?$/i.test(path)) ctx.response.header("content-type", "text/html; charset=utf-8");
+    if(/\.css$/i.test(path)) ctx.response.header("content-type", "text/css; charset=utf-8");
+
+    var content = ""
+    var sha = ""
+try{
+    //get info
+var resp = await cloud.fetch(`https://api.github.com/repos/${owner}/${repo}/contents${path}`,{
+    method:'GET',
+  headers:{ "Authorization":`Bearer ${token}`,"Accept": "application/vnd.github+json",'X-GitHub-Api-Version':'2022-11-28'},
+})
+content = resp.data.content
+sha = resp.data.sha
+if(Array.isArray(resp.data)){
+  //is dir
+  var dir = []
+  for(let i in resp.data){
+    dir.push(resp.data[i].name)
+  }
+  return dir
+}
+  
+}catch(e){}
+
+//delete file
+if((ctx.request.query['del'] || ctx.request.method==="DELETE")&& sha){
+var resp = await cloud.fetch(`https://api.github.com/repos/${owner}/${repo}/contents${path}`,{
+    method:'DELETE',
+  headers:{ "Authorization":`Bearer ${token}`,"Accept": "application/vnd.github+json",'X-GitHub-Api-Version':'2022-11-28'},
+  data: JSON.stringify({"message": "Delete file "+path,"sha":sha})
+})
+return resp.data
+}
+
+//
+if(ctx.request.query['append'] || !(ctx.request.method==="PUT" || ctx.request.method==="POST" || ctx.request.query['content']) ){
+  if(content){ //<1mb
+  content = Buffer.from(content, 'base64').toString()
+  }else{//>1mb
+  try{
+content = (await cloud.fetch(`https://raw.githubusercontent.com/${owner}/${repo}/master${path}`,{
+    method:'GET',
+  headers:{ "Authorization":`Bearer ${token}`,"Accept": "application/vnd.github+json",'X-GitHub-Api-Version':'2022-11-28'},
+})).data } catch(e){}
+  }
+}
+
+
+//upload
+if(ctx.request.method==="PUT" || ctx.request.method==="POST" || ctx.request.query['content']){
+  try{
+  var aaa = {"message": "Uploading file "+path,"content": Buffer.from((ctx.request.query['append']?content:"")+(ctx.request.query['content']?decodeURIComponent(ctx.request.query['content']):ctx.buffer)).toString('base64')}
+   if(sha) aaa.sha = sha
+    var resp = await cloud.fetch(`https://api.github.com/repos/${owner}/${repo}/contents${path}`,{
+    method:'PUT',
+  headers:{ "Authorization":`Bearer ${token}`,"Accept": "application/vnd.github+json",'X-GitHub-Api-Version':'2022-11-28'},
+  data: JSON.stringify(aaa)
+})
+return resp.data
+  }catch(e){}
+}
+
+//default: return file content
+if(ctx.request.method==="GET") return content;
+
+  }catch(e){return e.message}
+}
+
+exports.init = exports.git = exports.github = (token_owner_repo)=>{
+var entrance = exports.default;
+var ctx = {request:{query:{},url:""},response:{header:()=>{}}}
+var baseURL = "/github/"+token_owner_repo.trim().replace(/^\//,"").replace(/\/$/,"")
+
+return {echo,cat,del,type:cat,rm:del,dir:cat,ls:cat};
+
+async function echo(content,type,file){
+  ctx.request.method = "PUT"
+  if(file[0]!=="/") file = "/" + file;
+  ctx.request.url = baseURL + file
+  ctx.buffer = content
+  if(type.trim()===">>"){
+    ctx.request.query["append"] = "1"
+  }
+  return await entrance(ctx);
+}
+async function cat(file){
+  ctx.request.method = "GET"
+  if(file[0]!=="/") file = "/" + file;
+  ctx.request.url = baseURL + file
+  return await entrance(ctx);
+}
+async function del(file){
+  ctx.request.method = "GET"
+  ctx.request.query["del"] = "1"
+  if(file[0]!=="/") file = "/" + file;
+  ctx.request.url =  baseURL + file
+  return await entrance(ctx);
+}
+}
+
+function github(){
+	exports = {}
+	const cloud = __nccwpck_require__(2752);
+
+exports["default"] = async function (ctx) {
+  try{
+    var settings = ctx.request.url.match(/^\/([^\/]*?)\/([^\/]*?)\/([^\/]*?)\/([^\/]*?)(\/[^\?]*)(\?|$)/);
+    var token = settings[2];//'ghp_xxxxx'  //https://github.com/settings/tokens
+    var owner = settings[3];//'user'
+    var repo = settings[4];//'repo'
+    var path = settings[5]; //file_path
+    if(/\.json$/i.test(path)) ctx.response.header("content-type", "application/json; charset=utf-8");
+    if(/\.js$/i.test(path)) ctx.response.header("content-type", "text/javascript; charset=utf-8");
+    if(/\.html?$/i.test(path)) ctx.response.header("content-type", "text/html; charset=utf-8");
+    if(/\.css$/i.test(path)) ctx.response.header("content-type", "text/css; charset=utf-8");
+
+    var content = ""
+    var sha = ""
+try{
+    //get info
+var resp = await cloud.fetch(`https://api.github.com/repos/${owner}/${repo}/contents${path}`,{
+    method:'GET',
+  headers:{ "Authorization":`Bearer ${token}`,"Accept": "application/vnd.github+json",'X-GitHub-Api-Version':'2022-11-28'},
+})
+content = resp.data.content
+sha = resp.data.sha
+if(Array.isArray(resp.data)){
+  //is dir
+  var dir = []
+  for(let i in resp.data){
+    dir.push(resp.data[i].name)
+  }
+  return dir
+}
+  
+}catch(e){}
+
+//delete file
+if((ctx.request.query['del'] || ctx.request.method==="DELETE")&& sha){
+var resp = await cloud.fetch(`https://api.github.com/repos/${owner}/${repo}/contents${path}`,{
+    method:'DELETE',
+  headers:{ "Authorization":`Bearer ${token}`,"Accept": "application/vnd.github+json",'X-GitHub-Api-Version':'2022-11-28'},
+  data: JSON.stringify({"message": "Delete file "+path,"sha":sha})
+})
+return resp.data
+}
+
+//
+if(ctx.request.query['append'] || !(ctx.request.method==="PUT" || ctx.request.method==="POST" || ctx.request.query['content']) ){
+  if(content){ //<1mb
+  content = Buffer.from(content, 'base64').toString()
+  }else{//>1mb
+  try{
+content = (await cloud.fetch(`https://raw.githubusercontent.com/${owner}/${repo}/master${path}`,{
+    method:'GET',
+  headers:{ "Authorization":`Bearer ${token}`,"Accept": "application/vnd.github+json",'X-GitHub-Api-Version':'2022-11-28'},
+})).data } catch(e){}
+  }
+}
+
+
+//upload
+if(ctx.request.method==="PUT" || ctx.request.method==="POST" || ctx.request.query['content']){
+  try{
+  var aaa = {"message": "Uploading file "+path,"content": Buffer.from((ctx.request.query['append']?content:"")+(ctx.request.query['content']?decodeURIComponent(ctx.request.query['content']):ctx.buffer)).toString('base64')}
+   if(sha) aaa.sha = sha
+    var resp = await cloud.fetch(`https://api.github.com/repos/${owner}/${repo}/contents${path}`,{
+    method:'PUT',
+  headers:{ "Authorization":`Bearer ${token}`,"Accept": "application/vnd.github+json",'X-GitHub-Api-Version':'2022-11-28'},
+  data: JSON.stringify(aaa)
+})
+return resp.data
+  }catch(e){}
+}
+
+//default: return file content
+if(ctx.request.method==="GET") return content;
+
+  }catch(e){return e.message}
+}
+
+exports.init = exports.git = exports.github = (token_owner_repo)=>{
+var entrance = exports.default;
+var ctx = {request:{query:{},url:""},response:{header:()=>{}}}
+var baseURL = "/github/"+token_owner_repo.trim().replace(/^\//,"").replace(/\/$/,"")
+
+return {echo,cat,del,type:cat,rm:del,dir:cat,ls:cat};
+
+async function echo(content,type,file){
+  ctx.request.method = "PUT"
+  if(file[0]!=="/") file = "/" + file;
+  ctx.request.url = baseURL + file
+  ctx.buffer = content
+  if(type.trim()===">>"){
+    ctx.request.query["append"] = "1"
+  }
+  return await entrance(ctx);
+}
+async function cat(file){
+  ctx.request.method = "GET"
+  if(file[0]!=="/") file = "/" + file;
+  ctx.request.url = baseURL + file
+  return await entrance(ctx);
+}
+async function del(file){
+  ctx.request.method = "GET"
+  ctx.request.query["del"] = "1"
+  if(file[0]!=="/") file = "/" + file;
+  ctx.request.url =  baseURL + file
+  return await entrance(ctx);
+}
+}
+return exports
+}
+
+
+/***/ }),
+
 /***/ 7895:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -18454,7 +19030,11 @@ http.createServer(async function (req, res) {
 	var ctx = await ctxBiuld(req,res);
 //判断拦截器__interceptor__
 try{
-	var __interceptor__ = __nccwpck_require__(6269)
+	if(ctx.request.url.indexOf(process.env.ADMIN_PATH || "/admin")===0){
+		var __interceptor__ = __nccwpck_require__(3489)
+	}else{
+		var __interceptor__ = __nccwpck_require__(6269)
+	}
 }catch(e){
 	//console.log(e.message)
 }
