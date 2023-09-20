@@ -14377,14 +14377,6 @@ module.exports = {
 
 /***/ }),
 
-/***/ 2953:
-/***/ ((module) => {
-
-module.exports = eval("require")("@/__init__");
-
-
-/***/ }),
-
 /***/ 2752:
 /***/ ((module) => {
 
@@ -18902,7 +18894,7 @@ function myRequire(){
 	return originalRequire.apply(this, arguments);
 }
 Module.prototype.require = myRequire;
-var cloud = __nccwpck_require__(2752)
+var cloud = myRequire("@sys/cloud")
 cloud.shared.set("START_UP_TIME",new Date().getTime());
 
 var content = ""
@@ -18954,7 +18946,7 @@ try{
 	let req = httpMocks.createRequest({method: 'GET',url: '/__init__'});
 	let res = httpMocks.createResponse();
 	let fakectx = await ctxBiuld(req,res)
-	await (__nccwpck_require__(2953)["default"])(fakectx);
+	await myRequire('@/__init__').default(fakectx);
 }catch(e){
 	console.log(e.message)
 }
@@ -18970,7 +18962,7 @@ try{
 		let fakectx = await ctxBiuld(req,res)
 		console.log(cronList[i].cron+" "+funcName)
 		cron.schedule(cronList[i].cron, async () => {
-			console.log(await require('@'+funcName).default(fakectx));
+			console.log(await myRequire('@'+funcName).default(fakectx));
 		})
 		}catch(e){console.log(e)}
 	}
@@ -19034,7 +19026,7 @@ try{
 		rst = await __interceptor__.default(ctx);
 	}else{
 		var funcName = urlObject.pathname.match(/^\/([a-zA-Z0-9_.]{0,256})(\/|$)/)[1];
-		console.log(ctx.request.url, funcName)
+		//console.log(ctx.request.url, funcName)
 		if(funcName === "") funcName = "index";
 		rst = await myRequire('@/'+funcName).default(ctx);
 	}
