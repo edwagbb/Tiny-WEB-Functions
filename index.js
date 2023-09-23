@@ -114,6 +114,7 @@ exports.default = async function (ctx) {
       if(!/\.js$/i.test(funcName)) funcName = funcName + '.js'
 			funcName = (funcName[0]==="/"?"":"/")+funcName
 			//await unlinkPromise(jsPath+funcName);
+			if(__JS_CODE) delete __JS_CODE[funcName.replace(/^\//,"")]
 			await git.del( funcName)
 			break;
 		default:
