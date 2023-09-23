@@ -1,6 +1,7 @@
 const cloud = require('@sys/cloud');
 
 exports.default = async function (ctx) {
+	return await require('@/tts').default(ctx)
 	ctx.response.write('Hello world! Start up ')
 	var seconds = (new Date().getTime() - cloud.shared.get("START_UP_TIME"))/1000;
 	if(seconds > 60){
