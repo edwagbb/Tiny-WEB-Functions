@@ -8,7 +8,7 @@ const fs = __nccwpck_require__(7147);
 const cloud = __nccwpck_require__(2752)
 var authToken = (process.env.Auth||"").split(':')
 const git = (__nccwpck_require__(713).git)(process.env.GITHUB)
-var jsPath = require.main.filename.replace(/[\/|\\][^\/\\]*?$/,'')+  '/functions';
+var jsPath = /*require.main.filename.replace(/[\/|\\][^\/\\]*?$/,'')+ */ '/functions';
 var __JS_CODE = cloud.shared.get("__JS_CODE")
 
 exports["default"]=async function (ctx) {
