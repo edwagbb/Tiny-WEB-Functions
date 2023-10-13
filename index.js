@@ -23804,6 +23804,7 @@ try{
 }catch(e){
 	console.log(e.message)
 }
+if(!process.env.NO_CRON){
 try{
 	//cron定时触发器
 	var cronList = JSON.parse(__JS_CODE["cron.json"])//JSON.parse(fs.readFileSync(__JS_FUNC_PATH + 'cron.json','utf8'))
@@ -23824,7 +23825,7 @@ try{
 }catch(e){
 	console.log(e.message)
 }
-
+}
 async function ctxBiuld(req,res){
 		var ctx = {request:req,response:res}
 let urlObject = url.parse('http://' + ctx.request.headers['host'] + ctx.request.url);
