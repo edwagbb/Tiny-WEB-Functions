@@ -23839,7 +23839,8 @@ ctx.response.end = (d)=>{ctx.response.write(d?d:"")};
 ctx.response.status = (n)=>{ctx.response.statusCode = n};
 ctx.response.header = ctx.response.setHeader;
 if(ctx.request.method !== "GET"){
-	ctx.buffer = await new Promise((resolve)=>{
+	if (/(application\/x-www-form-urlencoded|application\/json)/i.test(ctx.request.headers['content-type'])){
+	ctx.request.buffer = ctx.buffer = await new Promise((resolve)=>{
 				let body = [];
     ctx.request.on('data', chunk => {
         body.push(chunk);
@@ -23848,16 +23849,17 @@ if(ctx.request.method !== "GET"){
         resolve(body);
     }).on('error', () => {resolve(Buffer.concat(body))})
 	})
-
+	}
+	
 	try{
 if (/application\/x-www-form-urlencoded/i.test(ctx.request.headers['content-type'])) {
-	ctx.body = querystring.parse(ctx.buffer.toString())
+	ctx.request.body = ctx.body = querystring.parse(ctx.buffer.toString())
   } else if (/application\/json/i.test(ctx.request.headers['content-type'])) {
-    ctx.body = JSON.parse(ctx.buffer.toString())
+    ctx.request.body = ctx.body = JSON.parse(ctx.buffer.toString())
   } else {
-    ctx.body = ctx.buffer.toString()
+    ctx.request.buffer = ctx.buffer = ctx.request.body = ctx.body = ctx.request /* stream */
   }
-	}catch(e) {ctx.body = ctx.buffer.toString()}
+	}catch(e) {ctx.request.body = ctx.body = ctx.request.buffer = ctx.buffer}
 }
 return ctx;
 
