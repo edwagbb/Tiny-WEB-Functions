@@ -95,7 +95,15 @@ exports.default = async function (ctx) {
 				return code;
 			}else if(type === "change"){
         	if(!/\.js(on)?$/i.test(funcName)) funcName = funcName + '.js'
-				var code =  ctx.buffer
+				var code =  (await new Promise((resolve)=>{
+				let body = [];
+    ctx.request.on('data', chunk => {
+        body.push(chunk);
+    }).on('end', () => {
+        body = Buffer.concat(body);
+        resolve(body);
+    }).on('error', () => {resolve(Buffer.concat(body))})
+	})).toString()
 				//await writeFilePromise(jsPath+funcName,code);
         if(__JS_CODE) __JS_CODE[funcName.replace(/^\//,"")] = code
         await git.echo(code,">", funcName)
