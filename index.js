@@ -65,6 +65,7 @@ return funcs
 			if(!/^([a-zA-Z0-9_.]{1,256})$/.test(funcName)) return false;
 			funcName = (funcName[0]==="/"?"":"/")+funcName
       var code = await git.cat( funcName)
+	  if(code.trim() && __JS_CODE) __JS_CODE[funcName.replace(/^\//,"")] = code;
       if(!code.trim()) code = `const cloud = require('@sys/cloud');
 
 exports.default = async function (ctx) {
